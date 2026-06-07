@@ -7,11 +7,17 @@ var keymap = struct {
 	left    string
 	right   string
 	confirm string
+	search  string
+	back    string
+	cancel  string
 }{
 	quit:    "q",
-	up:      "k",
-	down:    "j",
+	up:      "up",
+	down:    "down",
 	left:    "left",
 	right:   "right",
 	confirm: "enter",
+	search:  "s",
+	back:    "backspace",
+	cancel:  "escape",
 }

@@ -28,6 +28,7 @@ type model struct {
 	data        []entry
 	cursor      int
 	currentMode mode
+	searchQuery string
 }
 
 func initialModel() model {
@@ -54,20 +55,32 @@ func (m *model) LoadData() {
 
 	if m.currentDir != "/" {
 		m.data = append(m.data, entry{
-			name:     "...",
+			name:     "..",
 			path:     filepath.Dir(m.currentDir),
 			isDir:    true,
 			isParent: true,
 		})
 	}
 
+	var dirs []entry
+	var regularFiles []entry
+
 	for _, f := range files {
-		m.data = append(m.data, entry{
+		e := entry{
 			name:  f.Name(),
 			path:  filepath.Join(m.currentDir, f.Name()),
 			isDir: f.IsDir(),
-		})
+		}
+
+		if e.isDir == true {
+			dirs = append(dirs, e)
+		} else {
+			regularFiles = append(regularFiles, e)
+		}
 	}
+
+	m.data = append(m.data, dirs...)
+	m.data = append(m.data, regularFiles...)
 }
 
 func (m model) Init() tea.Cmd {
@@ -85,15 +98,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := fmt.Sprintf("Current Mode: %d\n", m.currentMode)
+	return ViewSwitch(m)
+}
+
+func ViewSwitch(m model) string {
+	s := ""
+
+	switch m.currentMode {
+
+	case normal:
+		s = NormalView(m)
+
+	case search:
+		s = SearchView(m)
+
+	}
+
+	return s
+}
+
+func ViewFilesAndFolders(m model) string {
+
+	s := ""
 
 	if len(m.data) == 0 {
 		return s + "No files found. \n\n [q] quit"
 	}
 
 	for i, e := range m.data {
+
+		icon := "🗀"
+
 		if i%cols == 0 && i != 0 {
-			s += "\n"
+			s += "\n\n"
 		}
 
 		cursorCharacter := " "
@@ -103,14 +140,20 @@ func (m model) View() string {
 
 		name := e.name
 
+		if len(name) > 15 {
+			name = name[:12] + "..."
+		}
+
 		if e.isDir && !e.isParent {
 			name += "/"
 		}
 
-		s += fmt.Sprintf("%s %-20s", cursorCharacter, name)
-	}
+		if !e.isDir {
+			icon = "🗎"
+		}
 
-	s += "\n\n[enter] open  [q] quit"
+		s += fmt.Sprintf("%s %s %-20s", cursorCharacter, icon, name)
+	}
 
 	return s
 }

@@ -153,11 +153,13 @@ func RenderVerticalFileList(m model, width, height int) string {
 	}
 
 	var lines []string
-	for i, e := range m.data {
+	for i := m.startIndex; i < len(m.data); i++ {
 		cursorChar := "  "
 		if i == m.cursor {
 			cursorChar = "> "
 		}
+
+		e := m.data[i]
 
 		icon := "🗎 "
 		name := e.name
@@ -203,20 +205,23 @@ func RenderFilePreview(m model, width, height int) string {
 		if err != nil {
 			return fmt.Sprintf("Error reading directory:\n%v", err)
 		}
-		out := fmt.Sprintf("Directory contents (%d items):\n\n", len(files))
+
+		var lines []string
+		lines = append(lines, fmt.Sprintf("Directory contents (%d items):", len(files)))
+		maxFileLines := height - len(lines) - 1
 
 		for idx, f := range files {
-			if idx >= height-3 {
-				out += " ...and more items\n"
+			if idx >= maxFileLines-3 {
+				lines = append(lines, " ...and more items")
 				break
 			}
 			if f.IsDir() {
-				out += fmt.Sprintf(" 📂 %s/\n", f.Name())
+				lines = append(lines, fmt.Sprintf(" 📂 %s/", f.Name()))
 			} else {
-				out += fmt.Sprintf(" 📄 %s\n", f.Name())
+				lines = append(lines, fmt.Sprintf(" 📄 %s", f.Name()))
 			}
 		}
-		return out
+		return strings.Join(lines, "\n")
 	}
 
 	content, err := os.ReadFile(selected.path)

@@ -40,22 +40,17 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 			if m.currentMode == search {
 				maxVisibleLines = m.terminalHeight - 8
 			}
+
 			if m.cursor >= m.startIndex+maxVisibleLines {
 				m.startIndex = m.cursor - maxVisibleLines + 1
 			}
 		}
 
 	case keymap.right:
-		if len(m.data) == 0 {
-			return m, nil
-		}
-		m = OpenSelected(m)
+		return OpenSelected(m)
 
 	case keymap.confirm:
-		if len(m.data) == 0 {
-			return m, nil
-		}
-		m = OpenSelected(m)
+		return OpenSelected(m)
 
 	case keymap.back:
 		m = OpenParent(m)

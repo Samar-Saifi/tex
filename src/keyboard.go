@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -32,14 +33,34 @@ func OpenParent(m model) model {
 	return m
 }
 
-func OpenSelected(m model) model {
+func OpenSelected(m model) (model, tea.Cmd) {
 	selected := m.data[m.cursor]
 
 	if selected.isDir {
 		m.currentDir = selected.path
 		m.cursor = 0
 		m.LoadData()
+	} else {
+
 	}
 
-	return m
+	return m, OpenFileWithDefaultApp(m)
+}
+
+func OpenFileWithDefaultApp(m model) tea.Cmd {
+
+	if len(m.data) == 0 || m.cursor >= len(m.data) {
+		return nil
+	}
+
+	selected := m.data[m.cursor]
+	if selected.isDir {
+		return nil
+	}
+
+	c := exec.Command("xdg-open", selected.path)
+
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		return nil
+	})
 }

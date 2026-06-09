@@ -19,5 +19,5 @@ var keymap = struct {
 	confirm: "enter",
 	search:  "s",
 	back:    "backspace",
-	cancel:  "escape",
+	cancel:  "esc",
 }

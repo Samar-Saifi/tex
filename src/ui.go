@@ -137,7 +137,7 @@ func MainLayout(m model) string {
 	if m.currentMode == search {
 		controlKeys = " [Type characters to search]  •  [enter] confirm/open focus  •  [esc] cancel search"
 	} else {
-		controlKeys = " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] parent  •  [s] search  •  [q] quit"
+		controlKeys = " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] parent  •  [s] search  •  [t] Terminal  •  [q] quit"
 	}
 	footer := FooterStyle.Width(width).Render(controlKeys)
 

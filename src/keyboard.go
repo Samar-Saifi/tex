@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -63,4 +64,19 @@ func OpenFileWithDefaultApp(m model) tea.Cmd {
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return nil
 	})
+}
+
+func OpenTerminal(m model) tea.Cmd {
+
+	cmd := exec.Command(os.Getenv("SHELL"))
+
+	cmd.Dir = m.currentDir
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return tea.ExecProcess(cmd,
+		func(err error) tea.Msg {
+			return nil
+		})
 }

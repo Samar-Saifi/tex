@@ -32,6 +32,9 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 			}
 		}
 
+	case keymap.terminal:
+		return m, OpenTerminal(m)
+
 	case keymap.down:
 		if m.cursor < len(m.data)-1 {
 			m.cursor++

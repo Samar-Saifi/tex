@@ -62,7 +62,18 @@ func OpenFileWithDefaultApp(m model) tea.Cmd {
 		return nil
 	}
 
-	c := exec.Command("xdg-open", selected.path)
+	var cmdName string
+	var args []string
+
+	if os.PathSeparator == '\\' {
+		cmdName = "cmd"
+		args = []string{"/c", "start", "", selected.path}
+	} else {
+		cmdName = "xdg-open"
+		args = []string{selected.path}
+	}
+
+	c := exec.Command(cmdName, args...)
 
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return nil
@@ -71,7 +82,14 @@ func OpenFileWithDefaultApp(m model) tea.Cmd {
 
 func OpenTerminal(m model) tea.Cmd {
 
-	cmd := exec.Command(os.Getenv("SHELL"))
+	var shell string
+	if os.PathSeparator == '\\' {
+		shell = os.Getenv("COMSPEC")
+	} else {
+		shell = os.Getenv("SHELL")
+	}
+
+	cmd := exec.Command(shell)
 
 	cmd.Dir = m.currentDir
 	cmd.Stdin = os.Stdin

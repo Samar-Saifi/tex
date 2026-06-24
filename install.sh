@@ -7,6 +7,7 @@ echo "📦 Building $APP_NAME..."
 mkdir -p "$BUILD_DIR"
 
 cd "$SRC_DIR"
+go mod tidy
 
 go build -o "../build/$APP_NAME" .
 

@@ -11,6 +11,8 @@ var keymap = struct {
 	back     string
 	cancel   string
 	terminal string
+	rename   string
+	dlt      string
 }{
 	quit:     "q",
 	up:       "up",
@@ -22,4 +24,6 @@ var keymap = struct {
 	back:     "backspace",
 	cancel:   "esc",
 	terminal: "t",
+	rename:   "r",
+	dlt:      "delete",
 }

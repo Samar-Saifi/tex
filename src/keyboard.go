@@ -14,6 +14,9 @@ func handleKey(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 	case normal:
 		return handleKeyNormal(msg, m)
 
+	case rename:
+		return handleKeyRename(msg, m)
+
 	case search:
 		return handleKeySearch(msg, m)
 	}

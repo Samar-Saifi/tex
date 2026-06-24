@@ -21,6 +21,12 @@ var (
 				Background(lipgloss.Color("#FF5F00")).
 				Padding(0, 1)
 
+	RenameHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#FAFAFA")).
+				Background(lipgloss.Color("#09ff00")).
+				Padding(0, 1)
+
 	ListStyle = lipgloss.NewStyle().
 			PaddingRight(1)
 
@@ -64,6 +70,12 @@ var (
 	FooterStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#585858")).
 			PaddingTop(0)
+
+	ErrorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color("#CC0000")).
+			Bold(true).
+			Padding(0, 1)
 )
 
 func MainLayout(m model) string {
@@ -92,6 +104,8 @@ func MainLayout(m model) string {
 	var header string
 	if m.currentMode == search {
 		header = SearchHeaderStyle.Width(width).Render(" MODE: SEARCHING目录")
+	} else if m.currentMode == rename {
+		header = RenameHeaderStyle.Width(width).Render(" MODE: RENAMING...")
 	} else {
 		header = NormalHeaderStyle.Width(width).Render(" TEX")
 	}
@@ -133,18 +147,35 @@ func MainLayout(m model) string {
 	}
 	metadata := MetadataStyle.Width(width).Render(metadataStr)
 
+	var errorBar string
+	if m.errorMsg != "" {
+		errorBar = ErrorStyle.Width(width).Render("⚠ " + m.errorMsg)
+	}
+
 	var controlKeys string
 	if m.currentMode == search {
 		controlKeys = " [Type characters to search]  •  [enter] confirm/open focus  •  [esc] cancel search"
 	} else {
-		controlKeys = " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] parent  •  [s] search  •  [t] Terminal  •  [q] quit"
+		controlKeys = " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] parent  •  [s] search  •  [t] Terminal  •  [q] quit •  [r] rename"
 	}
 	footer := FooterStyle.Width(width).Render(controlKeys)
 
-	if m.currentMode == search {
-		return lipgloss.JoinVertical(lipgloss.Left, header, mainContent, searchField, metadata, footer)
+	parts := []string{
+		header,
+		mainContent,
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, header, mainContent, metadata, footer)
+
+	if m.currentMode == search {
+		parts = append(parts, searchField)
+	}
+
+	if m.errorMsg != "" {
+		parts = append(parts, errorBar)
+	}
+
+	parts = append(parts, metadata, footer)
+
+	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
 func RenderVerticalFileList(m model, width, height int) string {

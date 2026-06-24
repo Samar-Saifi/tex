@@ -31,6 +31,8 @@ type model struct {
 	startIndex     int
 	terminalWidth  int
 	terminalHeight int
+	originalName   string
+	errorMsg       string
 }
 
 func initialModel() model {
@@ -40,6 +42,7 @@ func initialModel() model {
 		cursor:      0,
 		data:        nil,
 		currentMode: normal,
+		errorMsg:    "",
 	}
 
 	m.LoadData()

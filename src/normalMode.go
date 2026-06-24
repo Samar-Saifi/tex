@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,6 +36,29 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 
 	case keymap.terminal:
 		return m, OpenTerminal(m)
+
+	case keymap.rename:
+		m.currentMode = rename
+		m.originalName = m.data[m.cursor].name
+		m.data[m.cursor].name = ""
+
+	case keymap.dlt:
+		fileToBeDeleted := filepath.Join(m.currentDir, m.data[m.cursor].name)
+
+		var err error
+
+		if m.data[m.cursor].isDir {
+			err = os.RemoveAll(fileToBeDeleted)
+		} else {
+			err = os.Remove(fileToBeDeleted)
+		}
+
+		if err != nil {
+			m.errorMsg = err.Error()
+			return m, nil
+		}
+
+		m.errorMsg = ""
 
 	case keymap.down:
 		if m.cursor < len(m.data)-1 {

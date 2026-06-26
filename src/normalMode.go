@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -14,25 +13,12 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 	key = strings.ToLower(key)
 
 	switch key {
-
-	case keymap.quit:
-		return m, tea.Quit
-
-	case keymap.left:
-		m = OpenParent(m)
+	case keymap.left, keymap.up, keymap.down, keymap.left, keymap.right, keymap.confirm:
+		return handleNavigation(m, key)
 
 	case keymap.search:
 		m.currentMode = search
 		m.searchQuery = ""
-
-	case keymap.up:
-		if m.cursor > 0 {
-			m.cursor--
-
-			if m.cursor < m.startIndex {
-				m.startIndex = m.cursor
-			}
-		}
 
 	case keymap.terminal:
 		return m, OpenTerminal(m)
@@ -44,21 +30,35 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 
 	case keymap.dlt:
 		fileToBeDeleted := filepath.Join(m.currentDir, m.data[m.cursor].name)
-
-		var err error
-
-		if m.data[m.cursor].isDir {
-			err = os.RemoveAll(fileToBeDeleted)
-		} else {
-			err = os.Remove(fileToBeDeleted)
-		}
-
-		if err != nil {
-			m.errorMsg = err.Error()
+		callback := func(selectedIndex int) (model, tea.Cmd) {
+			if selectedIndex == 0 {
+				m = deleteFile(m, fileToBeDeleted)
+				m.LoadData()
+			}
 			return m, nil
 		}
 
-		m.errorMsg = ""
+		ShowPopup(&m, "Are you sure you want to delete?", []string{"Yes, Delete", "No, Cancel"}, callback)
+	default:
+		if len(key) == 1 {
+			m.currentMode = search
+			m.searchQuery = key
+		}
+	}
+
+	return m, nil
+}
+
+func handleNavigation(m model, key string) (model, tea.Cmd) {
+	switch key {
+	case keymap.up:
+		if m.cursor > 0 {
+			m.cursor--
+
+			if m.cursor < m.startIndex {
+				m.startIndex = m.cursor
+			}
+		}
 
 	case keymap.down:
 		if m.cursor < len(m.data)-1 {
@@ -74,14 +74,20 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 			}
 		}
 
+	case keymap.left:
+		m = OpenParent(m)
+
 	case keymap.right:
-		return OpenSelected(m)
+		if m.data[m.cursor].name != ".." {
+			return OpenSelected(m)
+		}
 
 	case keymap.confirm:
 		return OpenSelected(m)
 
 	case keymap.back:
 		m = OpenParent(m)
+
 	}
 
 	return m, nil

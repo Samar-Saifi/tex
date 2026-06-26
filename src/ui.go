@@ -8,72 +8,108 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	BackgroundDark = "#1E222A"
+	SurfaceMedium  = "#282C34"
+	TextMain       = "#ABB2BF"
+	TextMuted      = "#5C6370"
+	AccentTeal     = "#4C566A"
+	FocusTeal      = "#00E676"
+	FocusBlue      = "#61AFEF"
+	AlertCoral     = "#E06C75"
+	AlertWarning   = "#D19A66"
+)
+
 var (
 	NormalHeaderStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("#FAFAFA")).
-				Background(lipgloss.Color("#7D56F4")).
+				Foreground(lipgloss.Color("#1E222A")).
+				Background(lipgloss.Color(FocusBlue)).
 				Padding(0, 1)
 
 	SearchHeaderStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("#FAFAFA")).
-				Background(lipgloss.Color("#FF5F00")).
+				Foreground(lipgloss.Color("#1E222A")).
+				Background(lipgloss.Color(AlertWarning)).
 				Padding(0, 1)
 
 	RenameHeaderStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("#FAFAFA")).
-				Background(lipgloss.Color("#09ff00")).
+				Foreground(lipgloss.Color("#1E222A")).
+				Background(lipgloss.Color(FocusTeal)).
+				Padding(0, 1)
+
+	PopupHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#1E222A")).
+				Background(lipgloss.Color(AlertCoral)).
 				Padding(0, 1)
 
 	ListStyle = lipgloss.NewStyle().
 			PaddingRight(1)
 
+	PreviewStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), false, false, false, true).
+			BorderForeground(lipgloss.Color(TextMuted)).
+			PaddingLeft(2).
+			Foreground(lipgloss.Color(TextMain)).
+			Background(lipgloss.Color(SurfaceMedium))
+
 	CursorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FF87")).
+			Foreground(lipgloss.Color(FocusTeal)).
 			Bold(true)
 
 	DirStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00ADFF")).
+			Foreground(lipgloss.Color(FocusBlue)).
 			Bold(true)
 
 	FileStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#EEEEEE"))
-
-	PreviewStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder(), false, false, false, true).
-			BorderForeground(lipgloss.Color("#3A3A3A")).
-			PaddingLeft(2).
-			Foreground(lipgloss.Color("#A0A0A0"))
+			Foreground(lipgloss.Color(TextMain))
 
 	SearchInputBoxStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("#FF5F00")).
+				BorderForeground(lipgloss.Color(AlertWarning)).
 				Padding(0, 1).
 				MarginTop(1)
 
 	SearchPromptStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FF5F00")).
+				Foreground(lipgloss.Color(AlertWarning)).
 				Bold(true)
 
 	SearchValueStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#FAFAFA")).
-				Background(lipgloss.Color("#3A3A3A"))
+				Background(lipgloss.Color(SurfaceMedium))
+
+	PopupStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(AlertCoral)).
+			Padding(1, 2).
+			Background(lipgloss.Color(SurfaceMedium))
+
+	ActiveButtonSpec = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FAFAFA")).
+				Background(lipgloss.Color(AlertCoral)).
+				Padding(0, 2).
+				Bold(true)
+
+	InactiveButtonSpec = lipgloss.NewStyle().
+				Foreground(lipgloss.Color(TextMain)).
+				Background(lipgloss.Color(BackgroundDark)).
+				Padding(0, 2)
 
 	MetadataStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#8A8A8A")).
+			Foreground(lipgloss.Color(TextMain)).
 			Border(lipgloss.NormalBorder(), true, false, false, false).
-			BorderForeground(lipgloss.Color("#262626")).
+			BorderForeground(lipgloss.Color(TextMuted)).
 			PaddingTop(1)
 
 	FooterStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#585858")).
+			Foreground(lipgloss.Color(TextMuted)).
 			PaddingTop(0)
 
 	ErrorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#CC0000")).
+			Background(lipgloss.Color(AlertCoral)).
 			Bold(true).
 			Padding(0, 1)
 )
@@ -98,84 +134,119 @@ func MainLayout(m model) string {
 		contentHeight = 3
 	}
 
+	header := renderHeader(m, width)
+
+	mainContent := renderWorkspace(m, width, contentHeight)
+
+	if m.currentMode == search {
+		mainContent = renderSearchOverlay(m, width, mainContent)
+	} else if m.currentMode == popup && ActivePopup != nil {
+		mainContent = renderPopupOverlay(m, width, contentHeight, mainContent)
+	}
+
+	metadata := MetadataStyle.Width(width).Render(renderMetadataString(m))
+	footer := FooterStyle.Width(width).Render(renderFooterString(m))
+
+	parts := []string{header, mainContent}
+
+	if m.errorMsg != "" {
+		parts = append(parts, ErrorStyle.Width(width).Render("⚠ "+m.errorMsg))
+	}
+
+	parts = append(parts, metadata, footer)
+	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+func renderHeader(m model, width int) string {
+	switch m.currentMode {
+	case search:
+		return SearchHeaderStyle.Width(width).Render(" MODE: SEARCHING DIRECTORY")
+	case rename:
+		return RenameHeaderStyle.Width(width).Render(" MODE: RENAMING...")
+	case popup:
+		return PopupHeaderStyle.Width(width).Render(" MODE: ACTION REQUIRED")
+	default:
+		return NormalHeaderStyle.Width(width).Render(" TEX")
+	}
+}
+
+func renderWorkspace(m model, width, contentHeight int) string {
 	leftWidth := int(float64(width) * 0.4)
 	rightWidth := width - leftWidth - 1
-
-	var header string
-	if m.currentMode == search {
-		header = SearchHeaderStyle.Width(width).Render(" MODE: SEARCHING目录")
-	} else if m.currentMode == rename {
-		header = RenameHeaderStyle.Width(width).Render(" MODE: RENAMING...")
-	} else {
-		header = NormalHeaderStyle.Width(width).Render(" TEX")
-	}
 
 	leftContent := RenderVerticalFileList(m, leftWidth, contentHeight)
 	rightContent := RenderFilePreview(m, rightWidth, contentHeight)
 
-	mainContent := lipgloss.JoinHorizontal(
+	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		ListStyle.Width(leftWidth).Height(contentHeight).Render(leftContent),
 		PreviewStyle.Width(rightWidth).Height(contentHeight).Render(rightContent),
 	)
+}
 
-	var searchField string
-	if m.currentMode == search {
-		displayText := m.searchQuery
-		displayText += "█"
+func renderSearchOverlay(m model, width int, currentWorkspace string) string {
+	displayText := m.searchQuery + "█"
+	inputContent := fmt.Sprintf("%s %s", SearchPromptStyle.Render("🔍 Search for:"), SearchValueStyle.Render(displayText))
+	searchField := SearchInputBoxStyle.Width(width - 2).Render(inputContent)
 
-		inputContent := fmt.Sprintf("%s %s", SearchPromptStyle.Render("🔍 Search target:"), SearchValueStyle.Render(displayText))
-		searchField = SearchInputBoxStyle.Width(width - 2).Render(inputContent)
-	}
+	return lipgloss.JoinVertical(lipgloss.Left, currentWorkspace, searchField)
+}
 
-	metadataStr := " No File Selected"
-	if len(m.data) > 0 && m.cursor < len(m.data) {
-		selected := m.data[m.cursor]
-		info, err := os.Stat(selected.path)
-		if err == nil {
-			sizeStr := fmt.Sprintf("%d B", info.Size())
-			if info.IsDir() {
-				sizeStr = "DIR"
-			} else if info.Size() > 1024*1024 {
-				sizeStr = fmt.Sprintf("%.2f MB", float64(info.Size())/(1024*1024))
-			} else if info.Size() > 1024 {
-				sizeStr = fmt.Sprintf("%.2f KB", float64(info.Size())/1024)
-			}
-			metadataStr = fmt.Sprintf(" 📄 %s  •  💾 %s  •  🕒 %s  •  🔒 %s",
-				info.Name(), sizeStr, info.ModTime().Format("2006-01-02 15:04"), info.Mode().String())
+func renderPopupOverlay(m model, width, contentHeight int, currentWorkspace string) string {
+	var renderedOptions []string
+
+	for idx, option := range ActivePopup.Options {
+		if idx == ActivePopup.ActiveIndex {
+			renderedOptions = append(renderedOptions, ActiveButtonSpec.Render(" "+option+" "))
+		} else {
+			renderedOptions = append(renderedOptions, InactiveButtonSpec.Render(" "+option+" "))
 		}
 	}
-	metadata := MetadataStyle.Width(width).Render(metadataStr)
 
-	var errorBar string
-	if m.errorMsg != "" {
-		errorBar = ErrorStyle.Width(width).Render("⚠ " + m.errorMsg)
+	buttonsRow := lipgloss.JoinHorizontal(lipgloss.Center, strings.Join(renderedOptions, "   "))
+	popupContent := fmt.Sprintf(
+		"%s\n\n\n%s",
+		lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF")).Render(ActivePopup.Message),
+		buttonsRow,
+	)
+
+	popupBox := PopupStyle.Width(int(float64(width) * 0.7)).Render(popupContent)
+	return lipgloss.Place(width, contentHeight, lipgloss.Center, lipgloss.Center, popupBox)
+}
+
+func renderMetadataString(m model) string {
+	if len(m.data) == 0 || m.cursor >= len(m.data) {
+		return " No File Selected"
 	}
 
-	var controlKeys string
-	if m.currentMode == search {
-		controlKeys = " [Type characters to search]  •  [enter] confirm/open focus  •  [esc] cancel search"
-	} else {
-		controlKeys = " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] parent  •  [s] search  •  [t] Terminal  •  [q] quit •  [r] rename"
-	}
-	footer := FooterStyle.Width(width).Render(controlKeys)
-
-	parts := []string{
-		header,
-		mainContent,
+	selected := m.data[m.cursor]
+	info, err := os.Stat(selected.path)
+	if err != nil {
+		return " No File Selected"
 	}
 
-	if m.currentMode == search {
-		parts = append(parts, searchField)
+	sizeStr := fmt.Sprintf("%d B", info.Size())
+	if info.IsDir() {
+		sizeStr = "DIR"
+	} else if info.Size() > 1024*1024 {
+		sizeStr = fmt.Sprintf("%.2f MB", float64(info.Size())/(1024*1024))
+	} else if info.Size() > 1024 {
+		sizeStr = fmt.Sprintf("%.2f KB", float64(info.Size())/1024)
 	}
 
-	if m.errorMsg != "" {
-		parts = append(parts, errorBar)
+	return fmt.Sprintf(" 📄 %s  •  💾 %s  •  🕒 %s  •  🔒 %s",
+		info.Name(), sizeStr, info.ModTime().Format("2006-01-02 15:04"), info.Mode().String())
+}
+
+func renderFooterString(m model) string {
+	switch m.currentMode {
+	case search:
+		return " [Type characters to filter]  •  [enter] focus match  •  [esc] cancel search"
+	case popup:
+		return " [←/→] switch choice  •  [enter] execute action  •  [esc] dismiss modal"
+	default:
+		return " [↑/↓] navigate  •  [enter/→] open  •  [←/backspace] back  •  [alt+s] search  •  [alt+t] terminal  •  [alt+r] rename"
 	}
-
-	parts = append(parts, metadata, footer)
-
-	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
 func RenderVerticalFileList(m model, width, height int) string {
@@ -191,7 +262,6 @@ func RenderVerticalFileList(m model, width, height int) string {
 		}
 
 		e := m.data[i]
-
 		icon := "🗎 "
 		name := e.name
 		if e.isDir {

@@ -4,15 +4,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func handleKey(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 
+	if strings.ToLower(msg.String()) == keymap.quit {
+		return m, tea.Quit
+	}
+
 	switch m.currentMode {
 	case normal:
 		return handleKeyNormal(msg, m)
+
+	case popup:
+		return handleKeyPopup(msg, m)
 
 	case rename:
 		return handleKeyRename(msg, m)
@@ -39,7 +47,6 @@ func OpenParent(m model) model {
 
 func OpenSelected(m model) (model, tea.Cmd) {
 	selected := m.data[m.cursor]
-
 	if selected.isDir {
 		m.currentDir = selected.path
 		m.cursor = 0
@@ -100,4 +107,18 @@ func OpenTerminal(m model) tea.Cmd {
 		func(err error) tea.Msg {
 			return nil
 		})
+}
+
+func deleteFile(m model, path string) model {
+	var err error
+	err = os.RemoveAll(path)
+
+	if err != nil {
+		m.errorMsg = err.Error()
+		return m
+	}
+
+	m.errorMsg = ""
+	m.LoadData()
+	return m
 }

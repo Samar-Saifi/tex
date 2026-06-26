@@ -20,6 +20,7 @@ const (
 	normal mode = iota
 	search
 	rename
+	popup
 )
 
 type model struct {

@@ -23,7 +23,7 @@ func handleKeySearch(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 			m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
 		}
 
-	case keymap.confirm:
+	case keymap.confirm, keymap.right:
 		m.currentMode = normal
 		return OpenSelected(m)
 

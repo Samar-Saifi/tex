@@ -14,16 +14,16 @@ var keymap = struct {
 	rename   string
 	dlt      string
 }{
-	quit:     "q",
+	quit:     "alt+q",
 	up:       "up",
 	down:     "down",
 	left:     "left",
 	right:    "right",
 	confirm:  "enter",
-	search:   "s",
+	search:   "alt+s",
 	back:     "backspace",
 	cancel:   "esc",
-	terminal: "t",
-	rename:   "r",
+	terminal: "alt+t",
+	rename:   "alt+r",
 	dlt:      "delete",
 }

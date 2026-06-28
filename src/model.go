@@ -102,6 +102,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.terminalHeight = msg.Height
 		return m, nil
 
+	case error:
+		m.errorMsg = msg.Error()
+
 	case tea.KeyMsg:
 		return handleKey(msg, m)
 	}

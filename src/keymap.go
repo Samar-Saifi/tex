@@ -13,6 +13,7 @@ var keymap = struct {
 	terminal string
 	rename   string
 	dlt      string
+	openWith string
 }{
 	quit:     "alt+q",
 	up:       "up",
@@ -26,4 +27,5 @@ var keymap = struct {
 	terminal: "alt+t",
 	rename:   "alt+r",
 	dlt:      "delete",
+	openWith: "alt+o",
 }

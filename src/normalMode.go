@@ -16,6 +16,9 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 	case keymap.left, keymap.up, keymap.down, keymap.left, keymap.right, keymap.confirm:
 		return handleNavigation(m, key)
 
+	case keymap.openWith:
+		OpenWith(&m)
+
 	case keymap.search:
 		m.currentMode = search
 		m.searchQuery = ""
@@ -38,7 +41,7 @@ func handleKeyNormal(msg tea.KeyMsg, m model) (model, tea.Cmd) {
 			return m, nil
 		}
 
-		ShowPopup(&m, "Are you sure you want to delete?", []string{"Yes, Delete", "No, Cancel"}, callback)
+		ShowPopup(&m, "Are you sure you want to delete?", PopupHorizontal, []string{"Yes, Delete", "No, Cancel"}, callback)
 	default:
 		if len(key) == 1 {
 			m.currentMode = search

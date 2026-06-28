@@ -6,20 +6,29 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type PopupLayout int
+
+const (
+	PopupHorizontal PopupLayout = iota
+	PopupVertical
+)
+
 type Popup struct {
 	Message     string
 	Options     []string
 	ActiveIndex int
+	Layout      PopupLayout
 	OnSelect    func(selectedIndex int) (model, tea.Cmd)
 }
 
 var ActivePopup *Popup
 
-func ShowPopup(m *model, message string, options []string, callback func(int) (model, tea.Cmd)) {
+func ShowPopup(m *model, message string, layout PopupLayout, options []string, callback func(int) (model, tea.Cmd)) {
 	ActivePopup = &Popup{
 		Message:     message,
 		Options:     options,
 		ActiveIndex: 0,
+		Layout:      layout,
 		OnSelect:    callback,
 	}
 	m.currentMode = popup

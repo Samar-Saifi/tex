@@ -83,7 +83,7 @@ func OpenFileWithDefaultApp(m model) tea.Cmd {
 	c := exec.Command(cmdName, args...)
 
 	return tea.ExecProcess(c, func(err error) tea.Msg {
-		return nil
+		return err
 	})
 }
 

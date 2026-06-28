@@ -141,7 +141,7 @@ func MainLayout(m model) string {
 	if m.currentMode == search {
 		mainContent = renderSearchOverlay(m, width, mainContent)
 	} else if m.currentMode == popup && ActivePopup != nil {
-		mainContent = renderPopupOverlay(m, width, contentHeight, mainContent)
+		mainContent = renderPopupOverlay(m, width, contentHeight)
 	}
 
 	metadata := MetadataStyle.Width(width).Render(renderMetadataString(m))
@@ -192,26 +192,101 @@ func renderSearchOverlay(m model, width int, currentWorkspace string) string {
 	return lipgloss.JoinVertical(lipgloss.Left, currentWorkspace, searchField)
 }
 
-func renderPopupOverlay(m model, width, contentHeight int, currentWorkspace string) string {
-	var renderedOptions []string
-
-	for idx, option := range ActivePopup.Options {
-		if idx == ActivePopup.ActiveIndex {
-			renderedOptions = append(renderedOptions, ActiveButtonSpec.Render(" "+option+" "))
-		} else {
-			renderedOptions = append(renderedOptions, InactiveButtonSpec.Render(" "+option+" "))
-		}
+func renderPopupOverlay(m model, width, contentHeight int) string {
+	boxWidth := width * 7 / 10
+	if boxWidth > 80 {
+		boxWidth = 80
+	}
+	if boxWidth < 40 {
+		boxWidth = 40
 	}
 
-	buttonsRow := lipgloss.JoinHorizontal(lipgloss.Center, strings.Join(renderedOptions, "   "))
-	popupContent := fmt.Sprintf(
-		"%s\n\n\n%s",
-		lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF")).Render(ActivePopup.Message),
-		buttonsRow,
+	innerWidth := boxWidth - 4
+
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color(SurfaceMedium)). // ✅
+		Width(innerWidth).
+		Render(ActivePopup.Message)
+
+	var body string
+
+	switch ActivePopup.Layout {
+	case PopupHorizontal:
+		var buttons []string
+		for i, option := range ActivePopup.Options {
+			if i == ActivePopup.ActiveIndex {
+				buttons = append(buttons, ActiveButtonSpec.Render(option))
+			} else {
+				buttons = append(buttons, InactiveButtonSpec.Render(option))
+			}
+		}
+		body = lipgloss.NewStyle().
+			Width(innerWidth).
+			Background(lipgloss.Color(SurfaceMedium)). // ✅
+			Render(lipgloss.JoinHorizontal(lipgloss.Center, buttons...))
+
+	case PopupVertical:
+		selectedStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(FocusTeal)).
+			Background(lipgloss.Color(SurfaceMedium)).
+			Width(innerWidth). // ✅ pad to full width
+			Bold(true)
+
+		normalStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(TextMain)).
+			Background(lipgloss.Color(SurfaceMedium)).
+			Width(innerWidth) // ✅ pad to full width
+
+		var items []string
+		for i, option := range ActivePopup.Options {
+			if i == ActivePopup.ActiveIndex {
+				items = append(items, selectedStyle.Render("▶ "+option))
+			} else {
+				items = append(items, normalStyle.Render("  "+option))
+			}
+		}
+		body = lipgloss.JoinVertical(lipgloss.Left, items...)
+		// body = lipgloss.NewStyle().
+		// 	Width(innerWidth).
+		// 	Background(lipgloss.Color(SurfaceMedium)). // ✅
+		// 	Render(lipgloss.JoinVertical(lipgloss.Left, items...))
+	}
+
+	help := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(TextMuted)).
+		Background(lipgloss.Color(SurfaceMedium)). // ✅
+		Width(innerWidth).
+		Render(func() string {
+			if ActivePopup.Layout == PopupHorizontal {
+				return "←/→ Select • Enter Confirm • Esc Cancel"
+			}
+			return "↑/↓ Select • Enter Open • Esc Cancel"
+		}())
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		body,
+		"",
+		help,
 	)
 
-	popupBox := PopupStyle.Width(int(float64(width) * 0.7)).Render(popupContent)
-	return lipgloss.Place(width, contentHeight, lipgloss.Center, lipgloss.Center, popupBox)
+	popupBox := PopupStyle.
+		Width(boxWidth).
+		Render(content)
+
+	return lipgloss.Place(
+		width,
+		contentHeight,
+		lipgloss.Center,
+		lipgloss.Center,
+		popupBox,
+		lipgloss.WithWhitespaceBackground(lipgloss.Color(BackgroundDark)),
+		lipgloss.WithWhitespaceForeground(lipgloss.Color(BackgroundDark)),
+	)
 }
 
 func renderMetadataString(m model) string {
